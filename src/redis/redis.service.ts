@@ -1,34 +1,25 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import { Injectable, Logger } from '@nestjs/common';
+import { Redis } from '@upstash/redis';
 
 @Injectable()
-export class RedisService implements OnModuleDestroy {
+export class RedisService {
   private readonly logger = new Logger(RedisService.name);
-  readonly client: Redis;
+  private readonly client: Redis;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor() {
     this.client = new Redis({
-      host: this.configService.get<string>('redis.host', 'localhost'),
-      port: this.configService.get<number>('redis.port', 6379),
-      password: this.configService.get<string>('redis.password') || undefined,
-      lazyConnect: true,
+      url: process.env['UPSTASH_REDIS_REST_URL'] ?? '',
+      token: process.env['UPSTASH_REDIS_REST_TOKEN'] ?? '',
     });
-
-    this.client.on('connect', () => this.logger.log('Redis connected'));
-    this.client.on('error', (err) => this.logger.error('Redis error', err));
-  }
-
-  async onModuleDestroy() {
-    await this.client.quit();
+    this.logger.log('Upstash Redis client initialized');
   }
 
   async get(key: string): Promise<string | null> {
-    return this.client.get(key);
+    return this.client.get<string>(key);
   }
 
   async set(key: string, value: string, ttlSeconds: number): Promise<void> {
-    await this.client.set(key, value, 'EX', ttlSeconds);
+    await this.client.set(key, value, { ex: ttlSeconds });
   }
 
   async del(key: string): Promise<void> {
