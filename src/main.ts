@@ -15,9 +15,16 @@ async function bootstrap() {
     'frontendUrl',
     'http://localhost:5173',
   );
+  const allowedOrigins = frontendUrl.split(',').map((o) => o.trim());
 
   app.enableCors({
-    origin: frontendUrl,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
