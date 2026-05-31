@@ -10,7 +10,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('port', 3001);
+  const port = parseInt(process.env.PORT ?? configService.get('PORT') ?? '3001', 10);
   const frontendUrl = configService.get<string>(
     'frontendUrl',
     'http://localhost:5173',
@@ -45,7 +45,7 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 TripPilot-BE is running on: http://localhost:${port}/api`);
   logger.log(`📡 CORS enabled for: ${frontendUrl}`);
